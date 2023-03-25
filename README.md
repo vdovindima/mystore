@@ -13,3 +13,43 @@ docker run -d \
     -v ./data:/var/www/html:rw \ # file storage folder
     nginx:1.23-alpine-slim
 ```
+
+## Nginx conf
+
+```conf
+map $request_method $method_location {
+   GET     @get;
+   default @all;
+}
+
+upstream myapp {
+  server unix:/tmp/yoursocketpath;
+}
+
+  server {
+    listen       80 default_server;
+    server_name  _ "";
+    root         /var/www/html;
+
+    client_max_body_size 10G;
+
+    location = / {
+      return 404;
+    }
+
+    location ~ /([A-z0-9]*)/(.*) {
+      try_files /dev/null $method_location;
+    }
+
+    location @get {
+      autoindex on;
+      autoindex_exact_size on;
+      autoindex_format json;
+      autoindex_localtime on;
+    }
+
+    location @all {
+      proxy_pass http://myapp;
+    }
+  }
+```

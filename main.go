@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -18,7 +19,7 @@ func main() {
 	var socketPath string
 	var pathFolder string
 
-	flag.StringVar(&socketPath, "socket", "./socket", "Path to unix socket.")
+	flag.StringVar(&socketPath, "socket", "/tmp/mystore/socket.tmp", "Path to unix socket.")
 	flag.StringVar(&pathFolder, "pathFolder", "./data", "path folder file storage")
 	flag.Parse()
 
@@ -29,6 +30,16 @@ func main() {
 	if pathFolder == "" {
 		flag.Usage()
 		return
+	}
+	if _, err := os.Stat(filepath.Dir(socketPath)); errors.Is(err, os.ErrNotExist) {
+		if err := os.MkdirAll(filepath.Dir(socketPath), os.ModePerm); err != nil {
+			log.Fatal(err)
+		}
+	}
+	if _, err := os.Stat(pathFolder); errors.Is(err, os.ErrNotExist) {
+		if err := os.MkdirAll(pathFolder, os.ModePerm); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	listener, err := net.Listen("unix", socketPath)
